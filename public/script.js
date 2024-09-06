@@ -289,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playBtnIcon.title = 'Play Podcast';
         playBtnIcon.addEventListener('click', () => {
             console.log('Episode played:', episode);
+            loadPodcast(episode);
         });
 
         const queueBtnIcon = document.createElement('i');
@@ -365,142 +366,109 @@ document.addEventListener('DOMContentLoaded', () => {
         searchLink.classList.remove('selected');
         listenLink.classList.add('selected');
     }
+
+    // Player ----------------------------------- //
+    const image = document.getElementById('image');
+    const title = document.getElementById('title');
+    const datePublished = document.getElementById('datePublished');
+    const player = document.getElementById('player');
+    const currentTimeEl = document.getElementById('current-time');
+    const durationEl = document.getElementById('duration');
+    const progress = document.getElementById('progress');
+    const progressContainer = document.getElementById('progress-container');
+    const prevBtn = document.getElementById('prev');
+    const playBtn = document.getElementById('play');
+    const nextBtn = document.getElementById('next');
+
+    // Check if Playing
+    let isPlaying = false;
+
+    // Play
+    function playPodcast() {
+        isPlaying = true;
+        playBtn.classList.replace('fa-play', 'fa-pause');
+        playBtn.setAttribute('title', 'Pause');
+        player.play();
+    }
+
+    // Pause
+    function pausePodcast() {
+        isPlaying = false;
+        playBtn.classList.replace('fa-pause', 'fa-play');
+        playBtn.setAttribute('title', 'Play');
+        player.pause();
+    }
+
+    // Play or Pause Event Listener
+    playBtn.addEventListener('click', () => (isPlaying ? pausePodcast() : playPodcast()));
+
+    // Update Podcast container
+    function loadPodcast(episode) {
+        title.textContent = episode.title;
+        datePublished.textContent = `${episode.datePublished ? formatDate(episode.datePublished) : 'Not Available'}`;
+        player.src = episode.enclosureUrl;
+        image.src = episode.image || episode.feedImage || './default-podcast.png';
+
+        player.addEventListener('loadedmetadata', () => {
+            const duration = player.duration;
+            formatTime(duration, durationEl);
+            playPodcast();
+        });
+    }
+
+    // Format Time
+    function formatTime(time, elName) {
+        // Calculate hours, minutes, seconds
+        const hours = Math.floor(time / 3600);
+        const minutes = Math.floor((time % 3600) / 60);
+        let seconds = Math.floor(time % 60);
+
+        // Format Seconds
+        if (seconds < 10) seconds = `0${seconds}`;
+
+        // Format minutes
+        const formattedMinutes = hours > 0 && minutes < 10 ? `0${minutes}` : minutes;
+
+        // Display time in hours:minutes:seconds or minutes:seconds
+        if (time) {
+            elName.textContent = hours > 0
+                ? `${hours}:${formattedMinutes}:${seconds}`
+                : `${minutes}:${seconds}`
+        }
+    }
+
+    // Skip forward or backwards 15 seconds
+    function skipTime(amount) {
+        player.currentTime = Math.max(0, Math.min(player.duration, player.currentTime + amount));
+    }
+
+    // Update Progress Bar & Time
+    function updateProgressBar(e) {
+        const { duration, currentTime } = e.srcElement;
+        // Update progress bar width
+        const progressPercent = (currentTime / duration) * 100;
+        progress.style.width = `${progressPercent}%`;
+        // Format Time
+        formatTime(duration, durationEl);
+        formatTime(currentTime, currentTimeEl);
+    }
+
+    // Set Progress Bar
+    function setProgressBar(e) {
+        const width = this.clientWidth;
+        const clickX = e.offsetX;
+        const { duration } = player;
+        player.currentTime = (clickX / width) * duration;
+    }
+
+    // Event Listeners
+    player.addEventListener('timeupdate', updateProgressBar);
+    progressContainer.addEventListener('click', setProgressBar);
+    prevBtn.addEventListener('click', () => skipTime(-15));
+    nextBtn.addEventListener('click', () => skipTime(15));
 });
 
 
 
 
 
-// const image = document.querySelector('img');
-// const title = document.getElementById('title');
-// const artist = document.getElementById('artist');
-// const music = document.querySelector('audio');
-// const currentTimeEl = document.getElementById('current-time');
-// const durationEl = document.getElementById('duration');
-// const progress = document.getElementById('progress');
-// const progressContainer = document.getElementById('progress-container');
-// const prevBtn = document.getElementById('prev');
-// const playBtn = document.getElementById('play');
-// const nextBtn = document.getElementById('next');
-
-// // Music
-// const songs = [
-//   {
-//     name: 'jacinto-1',
-//     displayName: 'Electric Chill Machine',
-//     artist: 'Jacinto Design',
-//   },
-//   {
-//     name: 'jacinto-2',
-//     displayName: 'Seven Nation Army (Remix)',
-//     artist: 'Jacinto Design',
-//   },
-//   {
-//     name: 'jacinto-3',
-//     displayName: 'Goodnight, Disco Queen',
-//     artist: 'Jacinto Design',
-//   },
-//   {
-//     name: 'metric-1',
-//     displayName: 'Front Row (Remix)',
-//     artist: 'Metric/Jacinto Design',
-//   },
-// ];
-
-// // Check if Playing
-// let isPlaying = false;
-
-// // Play
-// function playSong() {
-//   isPlaying = true;
-//   playBtn.classList.replace('fa-play', 'fa-pause');
-//   playBtn.setAttribute('title', 'Pause');
-//   music.play();
-// }
-
-// // Pause
-// function pauseSong() {
-//   isPlaying = false;
-//   playBtn.classList.replace('fa-pause', 'fa-play');
-//   playBtn.setAttribute('title', 'Play');
-//   music.pause();
-// }
-
-// // Play or Pause Event Listener
-// playBtn.addEventListener('click', () => (isPlaying ? pauseSong() : playSong()));
-
-// // Update DOM
-// function loadSong(song) {
-//   title.textContent = song.displayName;
-//   artist.textContent = song.artist;
-//   music.src = `music/${song.name}.mp3`;
-//   image.src = `img/${song.name}.jpg`;
-// }
-
-// // Current Song
-// let songIndex = 0;
-
-// // Previous Song
-// function prevSong() {
-//   songIndex--;
-//   if (songIndex < 0) {
-//     songIndex = songs.length - 1;
-//   }
-//   loadSong(songs[songIndex]);
-//   playSong();
-// }
-
-// // Next Song
-// function nextSong() {
-//   songIndex++;
-//   if (songIndex > songs.length - 1) {
-//     songIndex = 0;
-//   }
-//   loadSong(songs[songIndex]);
-//   playSong();
-// }
-
-// // On Load - Select First Song
-// loadSong(songs[songIndex]);
-
-// // Update Progress Bar & Time
-// function updateProgressBar(e) {
-//   if (isPlaying) {
-//     const { duration, currentTime } = e.srcElement;
-//     // Update progress bar width
-//     const progressPercent = (currentTime / duration) * 100;
-//     progress.style.width = `${progressPercent}%`;
-//     // Calculate display for duration
-//     const durationMinutes = Math.floor(duration / 60);
-//     let durationSeconds = Math.floor(duration % 60);
-//     if (durationSeconds < 10) {
-//       durationSeconds = `0${durationSeconds}`;
-//     }
-//     // Delay switching duration Element to avoid NaN
-//     if (durationSeconds) {
-//       durationEl.textContent = `${durationMinutes}:${durationSeconds}`;
-//     }
-//     // Calculate display for currentTime
-//     const currentMinutes = Math.floor(currentTime / 60);
-//     let currentSeconds = Math.floor(currentTime % 60);
-//     if (currentSeconds < 10) {
-//       currentSeconds = `0${currentSeconds}`;
-//     }
-//     currentTimeEl.textContent = `${currentMinutes}:${currentSeconds}`;
-//   }
-// }
-
-// // Set Progress Bar
-// function setProgressBar(e) {
-//   const width = this.clientWidth;
-//   const clickX = e.offsetX;
-//   const { duration } = music;
-//   music.currentTime = (clickX / width) * duration;
-// }
-
-// // Event Listeners
-// prevBtn.addEventListener('click', prevSong);
-// nextBtn.addEventListener('click', nextSong);
-// music.addEventListener('ended', nextSong);
-// music.addEventListener('timeupdate', updateProgressBar);
-// progressContainer.addEventListener('click', setProgressBar);
